@@ -337,8 +337,44 @@ def concbargraph(x):
     plt.ylabel('Peak DF/F');
     plt.title('Peak DF/F');
 ##
-def conchist(x):
-    xctrl = MS_full[MS_full['Group'] == 'Control']
-    xMS = MS_full[MS_full['Group'] == 'Mint']
-    xhex = MS_full[MS_full['Group'] == 'Hexanal']
-    xctrl.tail()
+def conchist(odor,group):
+    '''Make a bunch of plots for an odor ('Mint',etc)'''
+    xdf = comp_sorted[['Group', '%s 0.01' % odor, '%s 0.05' % odor, '%s 0.1' % odor]]
+    xgroup = xdf[xdf['Group'] == '%s'%group]
+    #Set up figure parameters
+    sns.set(style="white", palette="muted", color_codes=True)
+    sns.set_context("talk", font_scale=2)
+    f, axes = plt.subplots(2, 2, figsize=(30, 20), sharex=True)
+    # f.suptitle("Control, MS Concentration", fontsize=40)
+    sns.despine(left=True)
+    # data
+    d = xgroup['%s 0.01'%odor]
+    e = xgroup['%s 0.05'%odor]
+    f = xgroup['%s 0.1'%odor]
+
+    # Plot a simple histogram with binsize determined automatically
+    sns.distplot(d, kde=False, color="b", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+    sns.distplot(e, kde=False, color="g", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+    sns.distplot(f, kde=False, color="r", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+
+    # Plot a kernel density estimate and rug plot
+    sns.distplot(d, hist=False, rug=True, color="b", axlabel=False, ax=axes[0, 1], label="%s 0.01"%odor)
+    sns.distplot(e, hist=False, rug=True, color="g", axlabel=False, ax=axes[0, 1], label="%s 0.05"%odor)
+    sns.distplot(f, hist=False, rug=True, color="r", axlabel=False, ax=axes[0, 1], label="%s 0.1"%odor)
+
+    # Plot a filled kernel density estimate
+    sns.distplot(d, hist=False, color="b", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+    sns.distplot(e, hist=False, color="g", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+    sns.distplot(f, hist=False, color="r", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+
+    # Plot a historgram and kernel density estimate
+    sns.distplot(d, color="b", axlabel=False, ax=axes[1, 1])
+    sns.distplot(e, color="g", axlabel=False, ax=axes[1, 1])
+    sns.distplot(f, color="r", axlabel=False, ax=axes[1, 1])
+
+    plt.setp(axes, yticks=[])
+    plt.tight_layout()
+##
