@@ -12,6 +12,7 @@ from scipy.stats import anderson_ksamp
 from scipy.stats import kruskal
 from scipy.stats import variation
 from scipy.stats import spearmanr
+from scipy.stats import zscore
 import seaborn as sns
 ##
 def getdata(dff_file,baseline_file,exclude):
@@ -275,14 +276,15 @@ def corrBLDFF(baseline,dff):
     plt.xlabel('Peak DF/F');
     from scipy.stats import spearmanr
     rho, pval = spearmanr(plotcorr['DFF'], plotcorr['Baseline'])
-    return rho, pval
+    print 'rho, pval'
+    print rho, pval
 ##
-def graphAllbox(x):
+def graphAllbox(dataframe):
     '''
     Make Composite or Baseline box plots
     Argument: DataFrame
     '''
-    xmelt=pd.melt(x,'Group',var_name='Odor')
+    xmelt=pd.melt(dataframe,'Group',var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=2.2);
     plt.figure(figsize=(45, 20));
@@ -294,12 +296,12 @@ def graphAllbox(x):
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 ##
-def graphAllbar(x):
+def graphAllbar(dataframe):
     '''
     Make Composite or Baseline bargraphs
     Argument: DataFrame
     '''
-    xmelt = pd.melt(x, 'Group', var_name='Odor')
+    xmelt = pd.melt(dataframe, 'Group', var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=2.2);
     plt.figure(figsize=(45, 20));
@@ -311,9 +313,9 @@ def graphAllbar(x):
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 ##
-def concboxplot(x):
+def concboxplot(odor):
     '''Make box plots based on concentrations'''
-    xdf=comp_sorted[['Group','%s 0.01'%x,'%s 0.05'%x,'%s 0.1'%x]]
+    xdf=comp_sorted[['Group','%s 0.01'%odor,'%s 0.05'%odor,'%s 0.1'%odor]]
     xdf=pd.melt(xdf,'Group',var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=4.3);
@@ -324,9 +326,9 @@ def concboxplot(x):
     plt.ylabel('Peak DF/F');
     plt.title('Peak DF/F');
 ##
-def concbargraph(x):
+def concbargraph(odor):
     '''Make bar graphs based on concentrations'''
-    xdf = comp_sorted[['Group', '%s 0.01' % x, '%s 0.05' % x, '%s 0.1' % x]]
+    xdf = comp_sorted[['Group', '%s 0.01' %odor, '%s 0.05' %odor, '%s 0.1' %odor]]
     xdf = pd.melt(xdf, 'Group', var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=4.3);
@@ -345,7 +347,7 @@ def conchist(odor,group):
     sns.set(style="white", palette="muted", color_codes=True)
     sns.set_context("talk", font_scale=2)
     f, axes = plt.subplots(2, 2, figsize=(30, 20), sharex=True)
-    # f.suptitle("Control, MS Concentration", fontsize=40)
+    f.suptitle('%s group'%group, fontsize=40)
     sns.despine(left=True)
     # data
     d = xgroup['%s 0.01'%odor]
@@ -377,4 +379,158 @@ def conchist(odor,group):
 
     plt.setp(axes, yticks=[])
     plt.tight_layout()
+##
+def compare_conc_kruskal(odor):
+    '''Do a kruskal wallis test looking at different concentrations of odor
+    '''
+    xdf = comp_sorted[['Group', '%s 0.01' % odor, '%s 0.05' % odor, '%s 0.1' % odor]]
+    xctrl = xdf[xdf['Group'] == 'Control']
+    xMS = xdf[xdf['Group'] == 'Mint']
+    xHex = xdf[xdf['Group'] == 'Hexanal']
+    kctrl=kruskal(xctrl['%s 0.01'%odor],xctrl['%s 0.05'%odor],xctrl['%s 0.1'%odor],nan_policy='omit')
+    kmint = kruskal(xMS['%s 0.01' % odor], xMS['%s 0.05' % odor], xMS['%s 0.1' % odor], nan_policy='omit')
+    khex = kruskal(xHex['%s 0.01' % odor], xHex['%s 0.05' % odor], xHex['%s 0.1' % odor], nan_policy='omit')
+    print 'Control group'
+    print kctrl
+    print 'Mint group'
+    print kmint
+    print 'Hexanal group'
+    print khex
+##
+def get_by_odor(odor):
+    '''For specified odor, gives boxplot, barplot, histogram, kruskal stat, all across groups
+    '''
+    x_full=comp_sorted[['Group',odor]]
+    xdf=pd.melt(x_full,'Group',var_name='Odor')
+    #barplot
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=3);
+    plt.figure(figsize=(15, 18));
+    sns.barplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"}, data=xdf);
+    sns.despine();
+    plt.legend(loc='upper right');
+    plt.ylabel('Peak DF/F');
+    plt.title('Peak DF/F');
+    #boxplot
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=3);
+    plt.figure(figsize=(15, 18));
+    sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"}, data=xdf);
+    sns.despine();
+    plt.legend(loc='upper right');
+    plt.ylabel('Peak DF/F');
+    plt.title('Peak DF/F');
+    plt.xlabel('Odor');
+    #histograms
+    xctrl = x_full[x_full['Group'] == 'Control']
+    xMS = x_full[x_full['Group'] == 'Mint']
+    xHex = x_full[x_full['Group'] == 'Hexanal']
+    sns.set(style="white", palette="muted", color_codes=True)
+    sns.set_context("talk", font_scale=2)
+    # Set up the matplotlib figure
+    f, axes = plt.subplots(2, 2, figsize=(30, 20), sharex=True)
+    f.suptitle("%s"%odor, fontsize=44)
+    sns.despine(left=True)
+    # data
+    d = xctrl[odor]
+    e = xMS[odor]
+    f = xHex[odor]
+    # Plot a simple histogram with binsize determined automatically
+    sns.distplot(d, kde=False, color="r", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+    sns.distplot(e, kde=False, color="g", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+    sns.distplot(f, kde=False, color="b", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
+                 ax=axes[0, 0])
+    # Plot a kernel density estimate and rug plot
+    sns.distplot(d, hist=False, rug=True, color="r", axlabel=False, ax=axes[0, 1], label="Control")
+    sns.distplot(e, hist=False, rug=True, color="g", axlabel=False, ax=axes[0, 1], label="Mint")
+    sns.distplot(f, hist=False, rug=True, color="b", axlabel=False, ax=axes[0, 1], label="Hexanal")
+    # Plot a filled kernel density estimate
+    sns.distplot(d, hist=False, color="r", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+    sns.distplot(e, hist=False, color="g", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+    sns.distplot(f, hist=False, color="b", kde_kws={"shade": True}, axlabel=False, ax=axes[1, 0])
+    # Plot a historgram and kernel density estimate
+    sns.distplot(d, color="r", axlabel=False, ax=axes[1, 1])
+    sns.distplot(e, color="g", axlabel=False, ax=axes[1, 1])
+    sns.distplot(f, color="b", axlabel=False, ax=axes[1, 1])
+    plt.setp(axes, yticks=[])
+    plt.tight_layout()
+    # Stats
+    print kruskal(xctrl['%s' % odor], xMS['%s' % odor], xHex['%s' % odor], nan_policy='omit')
+##
+def baseline_sort_by_group(baselinedf):
+    '''Sort baseline by group and make some graphs
+    use variable bdf from getdata function'''
+    bdfull = pd.melt(baselinedf, "Group", var_name="Odor")
+    bdfull = bdfull.dropna()
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=2.2);
+    plt.figure(figsize=(45, 20));
+    ax = sns.barplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
+                     data=bdfull);
+    sns.despine()
+    plt.ylabel('Intensity', fontsize=48);
+    plt.title('Baseline F', fontsize=55);
+    plt.xlabel('Odor', fontsize=48);
+    plt.legend(loc=2, prop={'size': 30});
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=2.2);
+    plt.figure(figsize=(45, 20));
+    ax = sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
+                     data=bdfull);
+    sns.despine()
+    plt.ylabel('Intensity', fontsize=48);
+    plt.title('Baseline F', fontsize=55);
+    plt.xlabel('Odor', fontsize=48);
+    plt.legend(loc=2, prop={'size': 30});
+##
+def rank_odor(dataframe):
+    '''Rank each odor for each individual cell'''
+    x=dataframe.rank(axis=1,numeric_only=float,na_option='keep',ascending=False)
+    x_label=pd.DataFrame(dataframe.Group)
+    tmp=[x_label,x]
+    rankedx=pd.concat(tmp,axis=1)
+    ctrlmr=pd.DataFrame(rankedx[rankedx['Group']=='Control'].mean(axis=0)).T
+    mintmr=pd.DataFrame(rankedx[rankedx['Group']=='Mint'].mean(axis=0)).T
+    hexmr=pd.DataFrame(rankedx[rankedx['Group']=='Hexanal'].mean(axis=0)).T
+    all=pd.concat([ctrlmr,mintmr,hexmr])
+    all=all.reset_index(drop=True)
+    grouplabels=pd.DataFrame({'Group':['Control','Mint','Hexanal']})
+    finaldf=pd.concat([grouplabels,all],axis=1)
+    finalmelt = pd.melt(finaldf, "Group", var_name="Odor")
+    #Plot some stuff
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=1.8);
+    plt.figure(figsize=(55, 20));
+    sns.pointplot(x="Odor", y="value", hue="Group", data=finalmelt,
+                  palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
+    sns.despine()
+    plt.ylabel('Rank', fontsize=48);
+    plt.title('Rank of odor response', fontsize=55);
+    plt.xlabel('Odor', fontsize=48);
+    plt.legend(loc=2, prop={'size': 48});
+    print finaldf
+    print kruskal(ctrlmr,mintmr,hexmr)
+##
+def zodors(dataframe,odor):
+    '''Compare the zscores of the odor dataframes, based on odor and comparison across groups'''
+    df=dataframe[['Group',odor]]
+    ctrl=zscore(df[df['Group']=='Control'][odor])
+    mint=zscore(df[df['Group']=='Mint'][odor])
+    hex=zscore(df[df['Group']=='Hexanal'][odor])
+    #plot some stuff
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=3);
+    plt.figure(figsize=(15, 18));
+    sns.distplot(ctrl, color="r", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
+                 axlabel=False, label="Control")
+    sns.distplot(mint, color="g", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
+                 axlabel=False, label="Mint")
+    sns.distplot(hex, color="b", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
+                 axlabel=False, label="Hexanal")
+    sns.despine();
+    plt.legend(loc='upper right');
+    plt.xlabel('Z-score');
+    plt.title('Z-scores for %s'%odor);
 ##
