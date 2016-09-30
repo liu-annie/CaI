@@ -13,6 +13,7 @@ from scipy.stats import kruskal
 from scipy.stats import variation
 from scipy.stats import spearmanr
 from scipy.stats import zscore
+from scipy.stats import gaussian_kde
 import seaborn as sns
 ##
 def getdata(dff_file,baseline_file,exclude):
@@ -270,7 +271,8 @@ def corrBLDFF(baseline,dff):
     # Plot Baseline vs. DFF as a scatterplot
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.4);
-    plotcorr.plot(x='DFF', y='Baseline', kind='scatter')
+    #plotcorr.plot(x='DFF', y='Baseline', kind='scatter')
+    sns.regplot(plotcorr['DFF'],plotcorr['Baseline']);
     plt.ylabel('Baseline Intensity');
     plt.title('Peak DF/F vs. Baseline');
     plt.xlabel('Peak DF/F');
@@ -522,7 +524,7 @@ def zodors(dataframe,odor):
     #plot some stuff
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=3);
-    plt.figure(figsize=(15, 18));
+    plt.figure(figsize=(24, 18));
     sns.distplot(ctrl, color="r", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
                  axlabel=False, label="Control")
     sns.distplot(mint, color="g", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
@@ -534,3 +536,58 @@ def zodors(dataframe,odor):
     plt.xlabel('Z-score');
     plt.title('Z-scores for %s'%odor);
 ##
+def kdeshift(x,odor):
+    '''Compare kde visually by shifting all kdes
+    so that all peaks are at zero
+    x is the dataframe (generally peaks.comp_sorted)
+    '''
+    ctrl = x[x['Group'] == 'Control']
+    ms = x[x['Group'] == 'Mint']
+    hex = x[x['Group'] == 'Hexanal']
+    x=np.arange(-1,5,0.01)
+    # Get the peak of each kde
+    ckde = gaussian_kde(ctrl[odor])
+    cy = ckde.evaluate(x)
+    mkde = gaussian_kde(ms[odor])
+    my = mkde.evaluate(x)
+    hkde = gaussian_kde(hex[odor])
+    hy = hkde.evaluate(x)
+    # use this max x value to shift the entire distribution
+    c_max_x_value = x[np.argmax(cy)]
+    m_max_x_value = x[np.argmax(my)]
+    h_max_x_value = x[np.argmax(hy)]
+    # make a dataframe of x,y coordinates of the kde, with a bin size of 0.01
+    cxdf = pd.DataFrame(x)
+    cxdf.columns = ['x']
+    c_newxdf = pd.DataFrame(cxdf['x'] - c_max_x_value)
+    cydf = pd.DataFrame(cy)
+    cydf.columns = ['y']
+    c_coordinates = pd.concat([cxdf, cydf], axis=1)
+    c_newcoordinates = pd.concat([c_newxdf, cydf], axis=1)
+
+    mxdf = pd.DataFrame(x)
+    mxdf.columns = ['x']
+    m_newxdf = pd.DataFrame(mxdf['x'] - m_max_x_value)
+    mydf = pd.DataFrame(my)
+    mydf.columns = ['y']
+    m_coordinates = pd.concat([mxdf, mydf], axis=1)
+    m_newcoordinates = pd.concat([m_newxdf, mydf], axis=1)
+
+    hxdf = pd.DataFrame(x)
+    hxdf.columns = ['x']
+    h_newxdf = pd.DataFrame(hxdf['x'] - h_max_x_value)
+    hydf = pd.DataFrame(hy)
+    hydf.columns = ['y']
+    h_coordinates = pd.concat([hxdf, hydf], axis=1)
+    h_newcoordinates = pd.concat([h_newxdf, hydf], axis=1)
+
+    # plot it!
+    sns.set(palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=3);
+    plt.figure(figsize=(24, 18));
+    plt.plot(c_newcoordinates['x'], c_newcoordinates['y'], color='r', label='Control');
+    plt.plot(m_newcoordinates['x'], m_newcoordinates['y'], color='g', label='Mint');
+    plt.plot(h_newcoordinates['x'], h_newcoordinates['y'], color='b', label='Hexanal');
+    sns.despine();
+    plt.legend(loc='upper right');
+    plt.title('KDEs, peaks centered, %s'%odor);
