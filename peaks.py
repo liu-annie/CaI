@@ -1,4 +1,5 @@
 '''Prep stuff
+'C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_MaxDF_NoP.csv','C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_Baseline_NoP.csv'
 '''
 ##
 drive_path = 'c:/'
@@ -525,12 +526,9 @@ def zodors(dataframe,odor):
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=3);
     plt.figure(figsize=(24, 18));
-    sns.distplot(ctrl, color="r", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
-                 axlabel=False, label="Control")
-    sns.distplot(mint, color="g", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
-                 axlabel=False, label="Mint")
-    sns.distplot(hex, color="b", kde_kws={"shade": True}, hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7},
-                 axlabel=False, label="Hexanal")
+    sns.distplot(ctrl, color="r", hist=False,kde_kws={"shade": True},axlabel=False, label="Control")
+    sns.distplot(mint, color="g", hist=False,kde_kws={"shade": True},axlabel=False, label="Mint")
+    sns.distplot(hex, color="b", hist=False,kde_kws={"shade": True},axlabel=False, label="Hexanal")
     sns.despine();
     plt.legend(loc='upper right');
     plt.xlabel('Z-score');
