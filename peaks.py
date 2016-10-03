@@ -136,6 +136,52 @@ def getmedian(x):
     plt.legend(loc=2, prop={'size': 48});
     return finalmedian
 ##
+def getstd(x):
+    '''
+    MEAN
+    Calculate means for each odor and plots means in boxplot and barplot
+    Input: dataframe like comp_sorted
+    '''
+    Cctrl=x[x['Group']=='Control']
+    Cstd=Cctrl.std()
+    M=x[x['Group']=='Mint']
+    Mstd=M.std()
+    H=x[x['Group']=='Hexanal']
+    Hstd=H.std()
+
+    CtrlMDFT=pd.DataFrame(Cstd).transpose()
+    MMDFT=pd.DataFrame(Mstd).transpose()
+    HMDFT=pd.DataFrame(Hstd).transpose()
+
+    #add group labels back
+    gnc = pd.DataFrame({'Group':['Control']})
+    gnm=pd.DataFrame({'Group':['Mint']})
+    gnh=pd.DataFrame({'Group':['Hexanal']})
+
+    Ctmp=[gnc,CtrlMDFT]
+    Mtmp=[gnm,MMDFT]
+    Htmp=[gnh,HMDFT]
+
+    CtrlMDF=pd.concat(Ctmp,axis=1)
+    MMDF=pd.concat(Mtmp,axis=1)
+    HMDF=pd.concat(Htmp,axis=1)
+
+    final=[CtrlMDF,MMDF,HMDF]
+    finalstd=pd.concat(final)
+    finalstddf=pd.melt(finalstd,"Group",var_name="Odor")
+
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=1.8);
+    plt.figure(figsize=(55, 20));
+    sns.pointplot(x="Odor", y="value", hue="Group", data=finalstddf,
+                  palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
+    sns.despine()
+    plt.ylabel('Standard Deviation', fontsize=48);
+    plt.title('Standard Deviation', fontsize=55);
+    plt.xlabel('Odor', fontsize=48);
+    plt.legend(loc=2, prop={'size': 48});
+    return finalstd
+##
 def getvar(x):
     '''
     COV
@@ -523,8 +569,7 @@ def zodors(dataframe,odor):
     mint=zscore(df[df['Group']=='Mint'][odor])
     hex=zscore(df[df['Group']=='Hexanal'][odor])
     #plot some stuff
-    sns.set(style="white", palette="muted", color_codes=True);
-    sns.set_context("talk", font_scale=3);
+    sns.set(style="white", palette="muted", color_codes=True)
     plt.figure(figsize=(24, 18));
     sns.distplot(ctrl, color="r", hist=False,kde_kws={"shade": True},axlabel=False, label="Control")
     sns.distplot(mint, color="g", hist=False,kde_kws={"shade": True},axlabel=False, label="Mint")
@@ -533,6 +578,7 @@ def zodors(dataframe,odor):
     plt.legend(loc='upper right');
     plt.xlabel('Z-score');
     plt.title('Z-scores for %s'%odor);
+    return anderson_ksamp((ctrl,mint,hex))
 ##
 def kdeshift(x,odor):
     '''Compare kde visually by shifting all kdes
@@ -589,3 +635,85 @@ def kdeshift(x,odor):
     sns.despine();
     plt.legend(loc='upper right');
     plt.title('KDEs, peaks centered, %s'%odor);
+##
+# def hist_analysis(dataframe):
+
+##
+def nsfa_by_group(dataframe):
+    '''Non stationary fluctuation analysis, averaged by group,
+    not averaged between odors
+    '''
+    # Calculate means and variance for each odor
+    Cctrl = dataframe[dataframe['Group'] == 'Control']
+    Cmean = pd.DataFrame(Cctrl.mean())
+    Cmean.columns = ['Control Mean']
+    Cvar = pd.DataFrame(Cctrl.var())
+    Cvar.columns = ['Control Variance']
+    M = dataframe[dataframe['Group'] == 'Mint']
+    Mmean = pd.DataFrame(M.mean())
+    Mmean.columns = ['Mint Mean']
+    Mvar = pd.DataFrame(M.var())
+    Mvar.columns = ['Mint Variance']
+    H = dataframe[dataframe['Group'] == 'Hexanal']
+    Hmean = pd.DataFrame(H.mean())
+    Hmean.columns = ['Hexanal Mean']
+    Hvar = pd.DataFrame(H.var())
+    Hvar.columns = ['Hexanal Variance']
+    # Concat
+    Ctmp = [Cmean, Cvar]
+    Mtmp = [Mmean, Mvar]
+    Htmp = [Hmean, Hvar]
+    CtrlDF = pd.concat(Ctmp, axis=1)
+    MDF = pd.concat(Mtmp, axis=1)
+    HDF = pd.concat(Htmp, axis=1)
+    final = [CtrlDF, MDF, HDF]
+    finaldf = pd.concat(final, axis=1)
+    finaldf = finaldf.reset_index(drop=True)
+    #Plot it
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=1.8);
+    plt.figure(figsize=(30, 15));
+    sns.regplot(finaldf['Control Mean'], finaldf['Control Variance'], scatter_kws={"s": 175}, color='r',label='Control')
+    sns.regplot(finaldf['Mint Mean'], finaldf['Mint Variance'], scatter_kws={"s": 175}, color='g',label='Mint')
+    sns.regplot(finaldf['Hexanal Mean'], finaldf['Hexanal Variance'], scatter_kws={"s": 175}, color='b',label='Hexanal')
+    sns.despine()
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Mean vs. Variance', fontsize=55);
+    plt.xlabel('Mean', fontsize=48);
+    plt.legend(loc=2, prop={'size': 48});
+##
+def nsfa_by_cell(dataframe):
+    '''Non stationary fluctuation analysis, averaged by cell across odors'''
+    Cctrl = dataframe[dataframe['Group'] == 'Control']
+    M = dataframe[dataframe['Group'] == 'Mint']
+    H = dataframe[dataframe['Group'] == 'Hexanal']
+    Ccellmean = Cctrl.mean(axis=1)
+    Ccellvar = Cctrl.var(axis=1)
+    Mcellmean = M.mean(axis=1)
+    Mcellvar = M.var(axis=1)
+    Hcellmean = H.mean(axis=1)
+    Hcellvar = H.var(axis=1)
+    # Concat
+    Ctemp = [Cctrl['Group'], Ccellmean, Ccellvar]
+    Mtemp = [M['Group'], Mcellmean, Mcellvar]
+    Htemp = [H['Group'], Hcellmean, Hcellvar]
+    CtrlcellDF = pd.concat(Ctemp, axis=1)
+    CtrlcellDF.columns = ('Group', 'Mean', 'Variance')
+    McellDF = pd.concat(Mtemp, axis=1)
+    McellDF.columns = ('Group', 'Mean', 'Variance')
+    HcellDF = pd.concat(Htemp, axis=1)
+    HcellDF.columns = ('Group', 'Mean', 'Variance')
+    finalcell = [CtrlcellDF, McellDF, HcellDF]
+    finalcelldf = pd.concat(finalcell, axis=0)
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=1.8);
+    plt.figure(figsize=(30, 15));
+    sns.regplot('Mean', 'Variance', CtrlcellDF, scatter_kws={"s": 80}, color='r', label='Control')
+    sns.regplot('Mean', 'Variance', McellDF, scatter_kws={"s": 80}, color='g', label='Mint')
+    sns.regplot('Mean', 'Variance', HcellDF, scatter_kws={"s": 80}, color='b', label='Hexanal')
+    sns.despine()
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Mean vs. Variance', fontsize=55);
+    plt.xlabel('Mean', fontsize=48);
+    plt.legend(loc=2, prop={'size': 48});
+##
