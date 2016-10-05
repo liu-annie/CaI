@@ -252,8 +252,8 @@ def getvar(x):
     sns.pointplot(x="Odor", y="value", hue="Group", data=finalvariancedf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('COV', fontsize=48);
-    plt.title('COV Peak DF/F', fontsize=55);
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Variance Peak DF/F', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
@@ -273,8 +273,8 @@ def getvar(x):
     sns.pointplot(x="Odor", y="value", hue="Group", data=MSconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('COV', fontsize=48);
-    plt.title('COV Peak DF/F - Methyl Salicylate', fontsize=55);
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Variance Peak DF/F - Methyl Salicylate', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
@@ -285,8 +285,8 @@ def getvar(x):
     sns.pointplot(x="Odor", y="value", hue="Group", data=Hexconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('COV', fontsize=48);
-    plt.title('COV Peak DF/F - Hexanal', fontsize=55);
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Variance Peak DF/F - Hexanal', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
@@ -297,8 +297,8 @@ def getvar(x):
     sns.pointplot(x="Odor", y="value", hue="Group", data=IAAconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('COV', fontsize=48);
-    plt.title('COV Peak DF/F - Isoamyl acetate', fontsize=55);
+    plt.ylabel('Variance', fontsize=48);
+    plt.title('Variance Peak DF/F - Isoamyl acetate', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 ##
@@ -337,7 +337,7 @@ def graphAllbox(dataframe):
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=2.2);
     plt.figure(figsize=(45, 20));
-    ax = sns.barplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
+    ax = sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
                      data=xmelt);
     sns.despine()
     plt.ylabel('Peak DF/F', fontsize=48);
@@ -354,7 +354,7 @@ def graphAllbar(dataframe):
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=2.2);
     plt.figure(figsize=(45, 20));
-    ax = sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
+    ax = sns.barplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
                      data=xmelt);
     sns.despine()
     plt.ylabel('Peak DF/F', fontsize=48);
@@ -636,8 +636,54 @@ def kdeshift(x,odor):
     plt.legend(loc='upper right');
     plt.title('KDEs, peaks centered, %s'%odor);
 ##
-# def hist_analysis(dataframe):
-
+def hist_analysis(dataframe,odor):
+    '''Compare normalized histograms'''
+    xfull = dataframe[['Group', odor]]
+    xdf = pd.melt(xfull, "Group", var_name="Odor")
+    cg = xfull[xfull['Group'] == 'Control']
+    mg = xfull[xfull['Group'] == 'Mint']
+    hg = xfull[xfull['Group'] == 'Hexanal']
+    #Make histograms
+    ctrlhist = np.asarray(np.histogram(cg[odor], bins=140, range=(-1, 6))[0], dtype=np.float)
+    mshist = np.asarray(np.histogram(mg[odor], bins=140, range=(-1, 6))[0], dtype=np.float)
+    hexhist = np.asarray(np.histogram(hg[odor], bins=140, range=(-1, 6))[0], dtype=np.float)
+    ctrlnorm = ctrlhist / (ctrlhist.sum())
+    msnorm = mshist / (mshist.sum())
+    hexnorm = hexhist / (hexhist.sum())
+    bincounts = np.histogram(cg[odor], bins=140, range=(-1, 6))[1][0:-1]
+    # dataframe of bin values
+    colnames = ['Bin', 'Control', 'Mint', 'Hexanal']
+    tmp = [pd.DataFrame(bincounts), pd.DataFrame(ctrlnorm), pd.DataFrame(msnorm), pd.DataFrame(hexnorm)]
+    fullnorm = pd.concat(tmp, axis=1)
+    fullnorm.columns = colnames
+    # plot the bins
+    sns.set(style="white", palette="muted", color_codes=True);
+    sns.set_context("talk", font_scale=1.8);
+    plt.figure(figsize=(30, 15));
+    plt.scatter(fullnorm['Bin'], fullnorm['Control'], s=80, c='r', label='Control');
+    plt.scatter(fullnorm['Bin'], fullnorm['Mint'], s=80, c='g', label='Mint');
+    plt.scatter(fullnorm['Bin'], fullnorm['Hexanal'], s=80, c='b', label='Hexanal');
+    plt.xlim(-0.1, 4.1)
+    sns.despine()
+    plt.ylabel('Proportion', fontsize=48);
+    plt.title('Normalized Histograms', fontsize=55);
+    plt.xlabel('Peak DF/F', fontsize=48);
+    plt.legend(loc=1, prop={'size': 48});
+    #Get some relevant values
+    print 'Kruskal-Wallis of %s between exposure groups'%odor
+    print kruskal(fullnorm['Control'],fullnorm['Mint'],fullnorm['Hexanal'])
+    print 'Kruskal-Wallis of Hexanal and Control'
+    print kruskal(fullnorm['Control'],fullnorm['Hexanal'])
+    print 'KS test of Hexanal and Control'
+    print ks_2samp(fullnorm['Hexanal'],fullnorm['Control'])
+    print 'Kruskal-Wallis of Hexanal and Mint'
+    print kruskal(fullnorm['Hexanal'],fullnorm['Mint'])
+    print 'KS test of Hexanal and Mint'
+    print ks_2samp(fullnorm['Hexanal'],fullnorm['Mint'])
+    print 'Kruskal-Wallis of Mint and Control'
+    print kruskal(fullnorm['Mint'],fullnorm['Control'])
+    print 'KS test of Mint and Control'
+    print ks_2samp(fullnorm['Mint'], fullnorm['Control'])
 ##
 def nsfa_by_group(dataframe):
     '''Non stationary fluctuation analysis, averaged by group,
