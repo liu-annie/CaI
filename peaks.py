@@ -1,5 +1,7 @@
 '''Prep stuff
 'C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_MaxDF_NoP.csv','C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_Baseline_NoP.csv'
+
+
 '''
 ##
 drive_path = 'c:/'
@@ -184,8 +186,8 @@ def getstd(x):
 ##
 def getvar(x):
     '''
-    COV
-    Calculate COV for each odor and plots them, also plots based on concentration
+    Variance (scipy.variation)
+    Calculate variation for each odor and plots them, also plots based on concentration
     Input: dataframe like comp_sorted
     '''
     # Calculate variance
@@ -266,7 +268,7 @@ def getvar(x):
     Hexconcvardf = pd.melt(Hexconcvar, 'Group', var_name='Odor')
     IAAconcvardf = pd.melt(IAAconcvar, 'Group', var_name='Odor')
 
-    # Plot COV MS Concentration
+    # Plot variance MS Concentration
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
@@ -278,7 +280,7 @@ def getvar(x):
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
-    # Plot COV Hexanal Concentration
+    # Plot variance Hexanal Concentration
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
@@ -290,7 +292,7 @@ def getvar(x):
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
-    # Plot COV IAA Concentration
+    # Plot variance IAA Concentration
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
@@ -329,8 +331,8 @@ def corrBLDFF(baseline,dff):
     print rho, pval
 ##
 def graphAllbox(dataframe):
+    #Make Composite or Baseline box plots
     '''
-    Make Composite or Baseline box plots
     Argument: DataFrame
     '''
     xmelt=pd.melt(dataframe,'Group',var_name='Odor')
@@ -364,7 +366,7 @@ def graphAllbar(dataframe):
 ##
 def concboxplot(odor):
     '''Make box plots based on concentrations'''
-    xdf=comp_sorted[['Group','%s 0.01'%odor,'%s 0.05'%odor,'%s 0.1'%odor]]
+    xdf=comp_sorted[['Group','%s01'%odor,'%s05'%odor,'%s10'%odor]]
     xdf=pd.melt(xdf,'Group',var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=4.3);
@@ -377,7 +379,7 @@ def concboxplot(odor):
 ##
 def concbargraph(odor):
     '''Make bar graphs based on concentrations'''
-    xdf = comp_sorted[['Group', '%s 0.01' %odor, '%s 0.05' %odor, '%s 0.1' %odor]]
+    xdf = comp_sorted[['Group', '%s01' %odor, '%s05' %odor, '%s10' %odor]]
     xdf = pd.melt(xdf, 'Group', var_name='Odor')
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=4.3);
@@ -390,7 +392,7 @@ def concbargraph(odor):
 ##
 def conchist(odor,group):
     '''Make a bunch of plots for an odor ('Mint',etc)'''
-    xdf = comp_sorted[['Group', '%s 0.01' % odor, '%s 0.05' % odor, '%s 0.1' % odor]]
+    xdf = comp_sorted[['Group', '%s01' % odor, '%s05' % odor, '%s10' % odor]]
     xgroup = xdf[xdf['Group'] == '%s'%group]
     #Set up figure parameters
     sns.set(style="white", palette="muted", color_codes=True)
@@ -399,9 +401,9 @@ def conchist(odor,group):
     f.suptitle('%s group'%group, fontsize=40)
     sns.despine(left=True)
     # data
-    d = xgroup['%s 0.01'%odor]
-    e = xgroup['%s 0.05'%odor]
-    f = xgroup['%s 0.1'%odor]
+    d = xgroup['%s01'%odor]
+    e = xgroup['%s05'%odor]
+    f = xgroup['%s10'%odor]
 
     # Plot a simple histogram with binsize determined automatically
     sns.distplot(d, kde=False, color="b", hist_kws={"histtype": 'step', "linewidth": 3, "alpha": 0.7}, axlabel=False,
@@ -432,13 +434,13 @@ def conchist(odor,group):
 def compare_conc_kruskal(odor):
     '''Do a kruskal wallis test looking at different concentrations of odor
     '''
-    xdf = comp_sorted[['Group', '%s 0.01' % odor, '%s 0.05' % odor, '%s 0.1' % odor]]
+    xdf = comp_sorted[['Group', '%s01' % odor, '%s05' % odor, '%s10' % odor]]
     xctrl = xdf[xdf['Group'] == 'Control']
     xMS = xdf[xdf['Group'] == 'Mint']
     xHex = xdf[xdf['Group'] == 'Hexanal']
-    kctrl=kruskal(xctrl['%s 0.01'%odor],xctrl['%s 0.05'%odor],xctrl['%s 0.1'%odor],nan_policy='omit')
-    kmint = kruskal(xMS['%s 0.01' % odor], xMS['%s 0.05' % odor], xMS['%s 0.1' % odor], nan_policy='omit')
-    khex = kruskal(xHex['%s 0.01' % odor], xHex['%s 0.05' % odor], xHex['%s 0.1' % odor], nan_policy='omit')
+    kctrl=kruskal(xctrl['%s01'%odor],xctrl['%s05'%odor],xctrl['%s10'%odor],nan_policy='omit')
+    kmint = kruskal(xMS['%s01' % odor], xMS['%s05' % odor], xMS['%s10' % odor], nan_policy='omit')
+    khex = kruskal(xHex['%s01' % odor], xHex['%s05' % odor], xHex['%s10' % odor], nan_policy='omit')
     print 'Control group'
     print kctrl
     print 'Mint group'
