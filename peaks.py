@@ -1,6 +1,6 @@
 '''Prep stuff
 'C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_MaxDF_NoP.csv','C:\Users\Annie\Documents\Data\Ca_Imaging\Analysis\Odor_Panel\Composite_Baseline_NoP.csv'
-
+'C:\Users\Annie\Documents\Data\Ca_Imaging\GoodFiles\\fullpeak.csv', 'C:\Users\Annie\Documents\Data\Ca_Imaging\GoodFiles\\fullbaseline.csv',['Mouse']
 
 '''
 ##
@@ -184,13 +184,13 @@ def getstd(x):
     plt.legend(loc=2, prop={'size': 48});
     return finalstd
 ##
-def getvar(x):
+def getcov(x):
     '''
-    Variance (scipy.variation)
-    Calculate variation for each odor and plots them, also plots based on concentration
+    COV (scipy.variation)
+    Calculate COV for each odor and plots them, also plots based on concentration
     Input: dataframe like comp_sorted
     '''
-    # Calculate variance
+    # Calculate cov
     CC = x[x['Group'] == 'Control']
     MM = x[x['Group'] == 'Mint']
     HH = x[x['Group'] == 'Hexanal']
@@ -198,9 +198,9 @@ def getvar(x):
     del MM['Group']
     del HH['Group']
 
-    CvarT = pd.DataFrame(variation(CC)).transpose()
-    MvarT = pd.DataFrame(variation(MM)).transpose()
-    HvarT = pd.DataFrame(variation(HH)).transpose()
+    CvarT = pd.DataFrame(variation(CC,nan_policy='omit')).transpose()
+    MvarT = pd.DataFrame(variation(MM,nan_policy='omit')).transpose()
+    HvarT = pd.DataFrame(variation(HH,nan_policy='omit')).transpose()
 
     # add group labels back
     gnc = pd.DataFrame({'Group': ['Control']})
@@ -223,60 +223,41 @@ def getvar(x):
     MV.columns = columnnames
     HV.columns = columnnames
 
-    # Fix BLANK NaNs
-    CCNB = pd.DataFrame(CC['BLANK'])
-    CCNB = CCNB.dropna()
-    CCNBvar = variation(CCNB)
-    CCNBvars = np.asscalar(CCNBvar)
-    CV = CV.replace(CV.BLANK[0], CCNBvars)
-
-    MMNB = pd.DataFrame(MM['BLANK'])
-    MMNB = MMNB.dropna()
-    MMNBvar = variation(MMNB)
-    MMNBvars = np.asscalar(MMNBvar)
-    MV = MV.replace(MV.BLANK[0], MMNBvars)
-
-    HHNB = pd.DataFrame(HH['BLANK'])
-    HHNB = HHNB.dropna()
-    HHNBvar = variation(HHNB)
-    HHNBvars = np.asscalar(HHNBvar)
-    HV = HV.replace(HV.BLANK[0], HHNBvars)
-
     complete = [CV, HV, MV]
     global finalvariance
     finalvariance = pd.concat(complete)
     finalvariancedf = pd.melt(finalvariance, "Group", var_name="Odor")
 
-    #plot variance
+    #plot COV
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
     sns.pointplot(x="Odor", y="value", hue="Group", data=finalvariancedf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('Variance', fontsize=48);
-    plt.title('Variance Peak DF/F', fontsize=55);
+    plt.ylabel('COV', fontsize=48);
+    plt.title('COV', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
-    #calculate and plot variance based on concentration
-    MSconcvar = finalvariance[['Group', 'MS 0.01', 'MS 0.05', 'MS 0.1']]
-    Hexconcvar = finalvariance[['Group', 'Hexanal 0.01', 'Hexanal 0.05', 'Hexanal 0.1']]
-    IAAconcvar = finalvariance[['Group', 'IAA 0.01', 'IAA 0.05', 'IAA 0.1']]
+    #calculate and plot COV based on concentration
+    MSconcvar = finalvariance[['Group', 'MS01', 'MS05', 'MS10']]
+    Hexconcvar = finalvariance[['Group', 'Hexanal01', 'Hexanal05', 'Hexanal10']]
+    IAAconcvar = finalvariance[['Group', 'IAA01', 'IAA05', 'IAA10']]
 
     MSconcvardf = pd.melt(MSconcvar, "Group", var_name="Odor")
     Hexconcvardf = pd.melt(Hexconcvar, 'Group', var_name='Odor')
     IAAconcvardf = pd.melt(IAAconcvar, 'Group', var_name='Odor')
 
-    # Plot variance MS Concentration
+    # Plot COV MS Concentration
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
     sns.pointplot(x="Odor", y="value", hue="Group", data=MSconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('Variance', fontsize=48);
-    plt.title('Variance Peak DF/F - Methyl Salicylate', fontsize=55);
+    plt.ylabel('COV', fontsize=48);
+    plt.title('COV - Methyl Salicylate', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
@@ -287,20 +268,20 @@ def getvar(x):
     sns.pointplot(x="Odor", y="value", hue="Group", data=Hexconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('Variance', fontsize=48);
-    plt.title('Variance Peak DF/F - Hexanal', fontsize=55);
+    plt.ylabel('COV', fontsize=48);
+    plt.title('COV - Hexanal', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 
-    # Plot variance IAA Concentration
+    # Plot COV IAA Concentration
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=1.8);
     plt.figure(figsize=(55, 20));
     sns.pointplot(x="Odor", y="value", hue="Group", data=IAAconcvardf,
                   palette={"Control": "r", "Mint": "g", 'Hexanal': 'b'});
     sns.despine()
-    plt.ylabel('Variance', fontsize=48);
-    plt.title('Variance Peak DF/F - Isoamyl acetate', fontsize=55);
+    plt.ylabel('COV', fontsize=48);
+    plt.title('COV - Isoamyl acetate', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 ##
@@ -323,8 +304,8 @@ def corrBLDFF(baseline,dff):
     #plotcorr.plot(x='DFF', y='Baseline', kind='scatter')
     sns.regplot(plotcorr['DFF'],plotcorr['Baseline']);
     plt.ylabel('Baseline Intensity');
-    plt.title('Peak DF/F vs. Baseline');
-    plt.xlabel('Peak DF/F');
+    plt.title('Integral vs. Baseline');
+    plt.xlabel('Integral');
     from scipy.stats import spearmanr
     rho, pval = spearmanr(plotcorr['DFF'], plotcorr['Baseline'])
     print 'rho, pval'
@@ -342,8 +323,8 @@ def graphAllbox(dataframe):
     ax = sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"},
                      data=xmelt);
     sns.despine()
-    plt.ylabel('Peak DF/F', fontsize=48);
-    plt.title('Peak DF/F', fontsize=55);
+    # plt.ylabel('PeakDF/F', fontsize=48);
+    # plt.title('Peak DF/F', fontsize=55);
     plt.xlabel('Odor', fontsize=48);
     plt.legend(loc=2, prop={'size': 48});
 ##
@@ -374,8 +355,8 @@ def concboxplot(odor):
     sns.boxplot(x="Odor", y="value", hue="Group", palette={"Control": "r", "Hexanal": "b", "Mint": "g"}, data=xdf);
     sns.despine()
     plt.legend(loc='upper right');
-    plt.ylabel('Peak DF/F');
-    plt.title('Peak DF/F');
+    plt.ylabel('Integral');
+    # plt.title('Integral');
 ##
 def concbargraph(odor):
     '''Make bar graphs based on concentrations'''
@@ -695,17 +676,17 @@ def nsfa_by_group(dataframe):
     Cctrl = dataframe[dataframe['Group'] == 'Control']
     Cmean = pd.DataFrame(Cctrl.mean())
     Cmean.columns = ['Control Mean']
-    Cvar = pd.DataFrame(Cctrl.var())
+    Cvar = pd.DataFrame(Cctrl.var(skipna=True))
     Cvar.columns = ['Control Variance']
     M = dataframe[dataframe['Group'] == 'Mint']
     Mmean = pd.DataFrame(M.mean())
     Mmean.columns = ['Mint Mean']
-    Mvar = pd.DataFrame(M.var())
+    Mvar = pd.DataFrame(M.var(skipna=True))
     Mvar.columns = ['Mint Variance']
     H = dataframe[dataframe['Group'] == 'Hexanal']
     Hmean = pd.DataFrame(H.mean())
     Hmean.columns = ['Hexanal Mean']
-    Hvar = pd.DataFrame(H.var())
+    Hvar = pd.DataFrame(H.var(skipna=True))
     Hvar.columns = ['Hexanal Variance']
     # Concat
     Ctmp = [Cmean, Cvar]
