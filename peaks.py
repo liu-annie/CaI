@@ -434,6 +434,7 @@ def get_by_odor(odor):
     '''
     x_full=comp_sorted[['Group',odor]]
     xdf=pd.melt(x_full,'Group',var_name='Odor')
+    xdf=xdf.dropna(axis=0, how='any')
     #barplot
     sns.set(style="white", palette="muted", color_codes=True);
     sns.set_context("talk", font_scale=3);
