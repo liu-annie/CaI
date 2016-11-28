@@ -21,7 +21,7 @@ def getpeaks(date):
     '''
     # This piece spits out all the peaks from one session in one dataframe
     peakdf = pd.DataFrame([])
-    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\GoodFiles\\%s' % date)
+    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\HabituationFiles\\%s' % date)
     for filename in glob.glob('*dt.txt'):
         f = pd.read_csv(filename, nrows=175)
         df = f[[col for col in f.columns if 'G PMT' in col]]
@@ -50,7 +50,7 @@ def getpeaks(date):
     trials = pd.read_csv('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\Analysis\\Odor_Panel\\Odor_Trials.csv')
     filerow = trials.loc[trials['File'] == date]
     odortrials = {}
-    for t in trials.Odor.unique():
+    for t in filerow.Odor.unique():
         y = {t: [int(x) for x in filerow.loc[filerow['Odor'] == t][['T1', 'T2', 'T3', 'T4']].values.tolist()[0]]}
         odortrials.update(y)
     # Get average peak across all trials using peakdf dataframe
@@ -93,12 +93,12 @@ def getintegral(date):
     date: string, session
     '''
     temp = pd.DataFrame([])
-    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\GoodFiles\\%s' % date)
+    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\HabituationFiles\\%s' % date)
     # Pull the trials that correspond to specific date/odors
     trials = pd.read_csv('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\Analysis\\Odor_Panel\\Odor_Trials.csv')
     filerow = trials.loc[trials['File'] == date]
     odortrials = {}
-    for t in trials.Odor.unique():
+    for t in filerow.Odor.unique():
         y = {t: [int(x) for x in filerow.loc[filerow['Odor'] == t][['T1', 'T2', 'T3', 'T4']].values.tolist()[0]]}
         odortrials.update(y)
     # Get the frame rate for a specified date
@@ -153,12 +153,12 @@ def getintegral(date):
 ##
 def getbaseline(date):
     temp = pd.DataFrame([])
-    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\GoodFiles\\%s' % date)
+    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\HabituationFiles\\%s' % date)
     # Pull the trials that correspond to specific date/odors
     trials = pd.read_csv('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\Analysis\\Odor_Panel\\Odor_Trials.csv')
     filerow = trials.loc[trials['File'] == date]
     odortrials = {}
-    for t in trials.Odor.unique():
+    for t in filerow.Odor.unique():
         y = {t: [int(x) for x in filerow.loc[filerow['Odor'] == t][['T1', 'T2', 'T3', 'T4']].values.tolist()[0]]}
         odortrials.update(y)
     # Get the frame rate for a specified date
@@ -204,6 +204,7 @@ def getbaseline(date):
 def concat(odorfile):
     '''trials is the file that has odor trial orders
     'C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\Analysis\\Odor_Panel\\Odor_Trials.csv'
+    'C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\Analysis\\Odor_Panel\\Habituation_Trials.csv'
     '''
     trials = pd.read_csv(odorfile)
     filerow = trials.loc[trials['File'] == date]

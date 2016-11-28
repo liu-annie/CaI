@@ -19,7 +19,7 @@ def detrend(file):
     '''script to detrend files and spit out notepad files of detrended data
     'C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\GoodFiles\\160321_2'
     '''
-    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\GoodFiles\\%s'%file)
+    os.chdir('C:\\Users\\Annie\\Documents\\Data\\Ca_Imaging\\HabituationFiles\\%s'%file)
     for filename in glob.glob('*.txt'):
         df=pd.read_table(filename,skiprows=4)
         odf=df[[col for col in df.columns if 'G PMT' in col]]
